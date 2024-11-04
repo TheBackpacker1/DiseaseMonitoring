@@ -14,4 +14,5 @@ interface ApiService {
     fun getDiseaseByName(@Path("name") name: String): Call<Disease>
     @POST("/api/diseases")
     fun addDisease(@Body disease: Disease):Call<Disease>
-}
+    @GET("api/diseases")
+    fun getAllDiseases(): Call<List<Disease>>}

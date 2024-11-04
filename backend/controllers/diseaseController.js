@@ -45,6 +45,16 @@ const getDiseaseByName = async (req, res) => {
   }
 };
 
+
+const getAllDiseases = async (req, res) => {
+  try {
+    const diseases = await Disease.find(); // Fetch all diseases
+    res.json(diseases); // Return all diseases in JSON format
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to retrieve diseases', error: error.message });
+  }
+};
+
 const updateDisease = async (req, res) => {
     const { name, symptoms, severity, notes, treatment, status } = req.body;
   
@@ -81,4 +91,4 @@ const deleteDisease = async (req, res) => {
     }
   };
   
-  module.exports = { addDisease,getDiseaseByName, updateDisease, deleteDisease };
+  module.exports = { addDisease,getDiseaseByName,getAllDiseases, updateDisease, deleteDisease };
