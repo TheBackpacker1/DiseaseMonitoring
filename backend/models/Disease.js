@@ -14,7 +14,6 @@ const DiseaseSchema = new mongoose.Schema({
     },
     severity: {
         type: String,
-        enum: ['Mild', 'Moderate', 'Severe'],
         default: 'Moderate'
     },
     notes: {

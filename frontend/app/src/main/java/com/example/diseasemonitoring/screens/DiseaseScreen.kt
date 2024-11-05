@@ -1,7 +1,10 @@
 package com.example.diseasemonitoring.screens
 
 import android.annotation.SuppressLint
+import android.app.DatePickerDialog
+import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,13 +17,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -34,6 +44,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -55,6 +66,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
@@ -63,37 +75,29 @@ import com.example.diseasemonitoring.models.Disease
 import com.example.diseasemonitoring.models.Medication
 import com.example.diseasemonitoring.models.Treatment
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
+fun DiseaseScreen(viewModel: DiseaseViewModels = viewModel()) {
 
-
-
-fun DiseaseScreen() {
     val navController = rememberNavController()
-    val viewModel : DiseaseViewModels = viewModel()
     val diseaseList by viewModel.diseaseList.observeAsState(listOf())
     var showAddDiseaseDialog by remember { mutableStateOf(false) }
 
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    var selectedItemIndex by remember {
-        mutableStateOf(0)
-    }
+    var selectedItemIndex by remember { mutableStateOf(0) }
 
     val items = listOf(
         NavigationItem("Home", Icons.Default.Home, Icons.Default.Home),
         NavigationItem("Profile", Icons.Default.Person, Icons.Default.Person),
         NavigationItem("Doctor Appointments", Icons.Default.DateRange, Icons.Default.DateRange),
-        NavigationItem("Sign Up", Icons.Default.ArrowForward, Icons.Default.ArrowForward) ,
-
-
-
+        NavigationItem("Settings", Icons.Default.Settings, Icons.Default.Settings),
+        NavigationItem("Sign Up", Icons.Default.ArrowForward, Icons.Default.ArrowForward)
     )
-
-
 
 
     ModalNavigationDrawer(
@@ -142,11 +146,8 @@ fun DiseaseScreen() {
                               }else {
                                   drawerState.close()
                               }
-
                           }
-
                         }
-
                         ) {
                             Icon(Icons.Default.Menu, contentDescription = "Open Drawer")
                         }
@@ -214,8 +215,14 @@ fun BottomNavigationBar(navController: NavHostController) {
             onClick = { /* Handle Home Navigation */ }
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
-            label = { Text("Profile") },
+            icon = { Icon(Icons.Default.Create, contentDescription = "Reports") },
+            label = { Text("Reports") },
+            selected = false, // Update selection based on navigation state
+            onClick = { /* Handle Profile Navigation */ }
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.DateRange, contentDescription = "Doctor Appointments") },
+            label = { Text("Doctor Appointments") },
             selected = false, // Update selection based on navigation state
             onClick = { /* Handle Profile Navigation */ }
         )
@@ -223,7 +230,7 @@ fun BottomNavigationBar(navController: NavHostController) {
 }
 
 @Composable
-fun DiseaseMedicationCard(disease: Disease) {
+fun DiseaseMedicationCard(disease: Disease ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -250,8 +257,9 @@ fun DiseaseMedicationCard(disease: Disease) {
 fun AddDiseaseDialog(onDismiss: () -> Unit, onAddDisease: (Disease) -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.padding(16.dp)
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.padding(16.dp),
+            tonalElevation = 4.dp
         ) {
             var diseaseName by remember { mutableStateOf("") }
             var symptoms by remember { mutableStateOf("") }
@@ -264,24 +272,96 @@ fun AddDiseaseDialog(onDismiss: () -> Unit, onAddDisease: (Disease) -> Unit) {
             var status by remember { mutableStateOf("") }
             var diagnosedAt by remember { mutableStateOf("") }
             var lifestyleRecommendations by remember { mutableStateOf("") }
+            var showDatePicker by remember { mutableStateOf(false) }
 
             Column(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(text = "Add Disease and Medication", style = MaterialTheme.typography.titleMedium)
+                Text(text = "Add Disease and Medication",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                OutlinedTextField(
+                    value = diseaseName,
+                    onValueChange = { diseaseName = it },
+                    label = { Text("Disease Name") },
+                    leadingIcon = { Icon(Icons.Default.Create, contentDescription = null) }
+                )
+                OutlinedTextField(
+                    value = symptoms,
+                    onValueChange = { symptoms = it },
+                    label = { Text("Symptoms") },
+                    leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }
+                )
+                OutlinedTextField(
+                    value = severity,
+                    onValueChange = { severity = it },
+                    label = { Text("Severity") },
+                    leadingIcon = { Icon(Icons.Default.Favorite, contentDescription = null) }
+                )
 
-                TextField(value = diseaseName, onValueChange = { diseaseName = it }, label = { Text("Disease Name") })
-                TextField(value = symptoms, onValueChange = { symptoms = it }, label = { Text("Symptoms") })
-                TextField(value = severity, onValueChange = { severity = it }, label = { Text("Severity") })
-                TextField(value = medicationName, onValueChange = { medicationName = it }, label = { Text("Medication Name") })
-                TextField(value = dosage, onValueChange = { dosage = it }, label = { Text("Dosage") })
-                TextField(value = frequency, onValueChange = { frequency = it }, label = { Text("Frequency") })
-                TextField(value = duration, onValueChange = { duration = it }, label = { Text("Duration") })
-                TextField(value = notes, onValueChange = { notes = it }, label = { Text("Notes") })
-                TextField(value = status, onValueChange = { status = it }, label = { Text("Status") })
-                TextField(value = diagnosedAt, onValueChange = { diagnosedAt = it }, label = { Text("Diagnosed At") })
-                TextField(value = lifestyleRecommendations, onValueChange = { lifestyleRecommendations = it }, label = { Text("Lifestyle Recommendations") })
+                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
+                OutlinedTextField(
+                    value = medicationName,
+                    onValueChange = { medicationName = it },
+                    label = { Text("Medication Name") },
+                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                )
+                OutlinedTextField(
+                    value = dosage,
+                    onValueChange = { dosage = it },
+                    label = { Text("Dosage") }
+                )
+                OutlinedTextField(
+                    value = frequency,
+                    onValueChange = { frequency = it },
+                    label = { Text("Frequency") }
+                )
+                OutlinedTextField(
+                    value = duration,
+                    onValueChange = { duration = it },
+                    label = { Text("Duration") }
+                )
+
+                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes") }
+                )
+                OutlinedTextField(
+                    value = status,
+                    onValueChange = { status = it },
+                    label = { Text("Status") }
+                )
+
+
+                OutlinedTextField(
+                    value = diagnosedAt,
+                    onValueChange = { diagnosedAt = it },
+                    label = { Text("Diagnosed At") },
+                    leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null) },
+                    readOnly = true,
+                    modifier = Modifier.clickable { showDatePicker = true }
+                )
+
+                if (showDatePicker) {
+                    ShowDatePickerDialog(
+                        onDismiss = { showDatePicker = false },
+                        onDateSelected = { date ->
+                            diagnosedAt = date
+                            showDatePicker = false
+                        }
+                    )
+                }
+                OutlinedTextField(
+                    value = lifestyleRecommendations,
+                    onValueChange = { lifestyleRecommendations = it },
+                    label = { Text("Lifestyle Recommendations") }
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -292,32 +372,75 @@ fun AddDiseaseDialog(onDismiss: () -> Unit, onAddDisease: (Disease) -> Unit) {
                     TextButton(onClick = onDismiss) {
                         Text("Cancel")
                     }
-                    TextButton(onClick = {
-                        val newDisease = Disease(
-                            name = diseaseName,
-                            symptoms = symptoms,
-                            severity = severity,
-                            notes = notes,
-                            status = status,
-                            diagnosedAt = diagnosedAt,
-                            treatment = Treatment(
-                                medications = listOf(
-                                    Medication(
-                                        name = medicationName,
-                                        dosage = dosage,
-                                        frequency = frequency,
-                                        duration = duration
+                    Button(
+                        onClick = {
+                            Log.d("AddDiseaseDialog", "Disease Name: $diseaseName")
+                            Log.d("AddDiseaseDialog", "Medication Name: $medicationName")
+                            Log.d("AddDiseaseDialog", "Submitting Disease...")
+                            // Validation check
+                            if (diseaseName.isNotEmpty() && medicationName.isNotEmpty()) {
+                                val newDisease = Disease(
+                                    name = diseaseName,
+                                    symptoms = symptoms,
+                                    severity = severity,
+                                    notes = notes,
+                                    status = status,
+                                    diagnosedAt = diagnosedAt,
+                                    treatment = Treatment(
+                                        medications = listOf(
+                                            Medication(
+                                                name = medicationName,
+                                                dosage = dosage,
+                                                frequency = frequency,
+                                                duration = duration
+                                            )
+                                        ),
+                                        lifestyleRecommendations = lifestyleRecommendations
                                     )
-                                ),
-                                lifestyleRecommendations = lifestyleRecommendations
-                            )
-                        )
-                        onAddDisease(newDisease)
-                    }) {
-                        Text("Submit")
+                                )
+                                onAddDisease(newDisease)
+                                        Log.d("AddDiseaseDialog", "Disease added successfully")
+
+                                onDismiss() // Dismiss after adding
+                            } else {
+                                Log.e("AddDiseaseDialog", "Error: Disease Name or Medication Name cannot be empty")
+
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text("Save", color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ShowDatePickerDialog(onDismiss: () -> Unit, onDateSelected: (String) -> Unit) {
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+
+    // Use a LaunchedEffect to show the dialog
+    LaunchedEffect(Unit) {
+        // Create the DatePickerDialog
+        val datePickerDialog = DatePickerDialog(
+            context,
+            { _, year, month, dayOfMonth ->
+                // Format the selected date
+                val selectedDate = "$dayOfMonth/${month + 1}/$year" // Format date as needed
+                onDateSelected(selectedDate)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+
+        // Show the dialog
+        datePickerDialog.show()
+
+        // Set dismiss listener
+        datePickerDialog.setOnDismissListener { onDismiss() }
     }
 }
