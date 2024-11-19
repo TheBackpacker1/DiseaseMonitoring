@@ -1,94 +1,98 @@
-const Disease=require('../models/Disease')
+const Disease = require('../models/Disease')
 
 
+const staticUserId ="64fef678e1b2ec4f112d4f89"
 
 
+const addDisease = async (req, res) => {
 
-const addDisease = async(req,res) => {
+  const { userId, name, medicine, prescriptionTimes, prescription, notificationTime, diagnosedAt } = req.body
 
-const  {name,symptoms,severity,notes,treatment,status,diagnosedAt}=req.body
-
-try {
+  try {
     const newDisease = new Disease({
+      userId :staticUserId,
       name,
-      symptoms,
-      severity,
-      notes,
-      treatment,
-      status,
+      medicine,
+      prescriptionTimes,
+      prescription,
+      notificationTime,
       diagnosedAt,
     });
     await newDisease.save();
     res.status(201).json(newDisease);
-} catch (error) {
+  } catch (error) {
     res.status(500).json({ message: 'Failed to add disease', error: error.message });
   }
 
 
 
- 
-} 
 
-const getDiseaseByName = async (req, res) => {
-  const { name } = req.params; // Get the name from the request parameters
+}
+
+const getDiseasesByUserId = async (req, res) => {
+  const { userId } = req.params; 
 
   try {
-      const disease = await Disease.findOne({ name }); // Find the disease by name
+    const disease = await Disease.find({ userId }); 
 
-      if (!disease) {
-          return res.status(404).json({ message: 'Disease not found' });
-      }
+    if (!disease.length) {
+      return res.status(404).json({ message: 'No diseases found for this user' });
+    }
 
-      res.json(disease);
+    res.json(disease);
   } catch (error) {
-      res.status(500).json({ message: 'Failed to retrieve disease', error: error.message });
+    res.status(500).json({ message: 'Failed to retrieve disease', error: error.message });
+  }
+};
+
+const getDiseaseByNameAndUserId = async (req, res) => {
+  const { userId, name } = req.params;
+
+  try {
+    const disease = await Disease.findOne({ userId, name });
+    if (!disease) {
+      return res.status(404).json({ message: 'Disease not found' });
+    }
+    res.json(disease);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to retrieve disease', error: error.message });
+  }
+};
+
+const updateDiseaseByUserId  = async (req, res) => {
+  const {userId,name}=req.params 
+  const { medicine, prescriptionTimes, prescription, notificationTime, lastUpdated } = req.body;
+
+  try {
+    const updatedDisease = await Disease.findOneAndUpdate(
+      { userId,name },
+      { medicine, prescriptionTimes, prescription, notificationTime, lastUpdated: Date.now() },
+      { new: true }
+    );
+
+    if (!updatedDisease) {
+      return res.status(404).json({ message: 'Disease not found' });
+    }
+    res.json(updatedDisease);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update disease', error: error.message });
   }
 };
 
 
-const getAllDiseases = async (req, res) => {
+const deleteDiseaseByUserId = async (req, res) => {
+  const { userId,name } = req.params
   try {
-    const diseases = await Disease.find(); // Fetch all diseases
-    res.json(diseases); // Return all diseases in JSON format
+    const disease = await Disease.findOneAndDelete({ userId,name });
+
+    if (!disease) {
+      return res.status(404).json({ message: 'Disease not found' });
+    }
+
+    res.json({ message: 'Disease deleted' });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to retrieve diseases', error: error.message });
+    res.status(500).json({ message: 'Failed to delete disease', error: error.message });
   }
 };
 
-const updateDisease = async (req, res) => {
-    const { name, symptoms, severity, notes, treatment, status } = req.body;
-  
-    try {
-      const updatedDisease = await Disease.findOneAndUpdate(
-        {name},
-        { name, symptoms, severity, notes, treatment, status, lastUpdated: Date.now() },
-        { new: true }
-      );
-  
-      if (!updatedDisease) {
-        return res.status(404).json({ message: 'Disease not found' });
-      }
-  
-      res.json(updatedDisease);
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to update disease', error: error.message });
-    }
-  };
-
-
-const deleteDisease = async (req, res) => {
-  const { name } = req.params
-    try {
-      const disease = await Disease.findOneAndDelete({name});
-  
-      if (!disease) {
-        return res.status(404).json({ message: 'Disease not found' });
-      }
-  
-      res.json({ message: 'Disease deleted' });
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to delete disease', error: error.message });
-    }
-  };
-  
-  module.exports = { addDisease,getDiseaseByName,getAllDiseases, updateDisease, deleteDisease };
+module.exports = { addDisease, getDiseasesByUserId, getDiseaseByNameAndUserId, updateDiseaseByUserId, deleteDiseaseByUserId };

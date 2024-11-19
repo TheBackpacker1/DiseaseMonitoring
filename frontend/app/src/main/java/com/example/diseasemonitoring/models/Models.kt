@@ -1,23 +1,17 @@
 package com.example.diseasemonitoring.models
 
 data class Disease(
+    val userId: String,
     val name: String,
-    val symptoms: String,
-    val severity: String,
-    val notes: String,
-    val treatment: Treatment,
-    val status: String,
-    val diagnosedAt: String
+    val medicine: String,  // The name of the medicine (replacing the `Medication` list)
+    val prescriptionTimes: PrescriptionTimes,
+    val prescription: String,
+    val notificationTime: String,
+    val diagnosedAt: String,
 )
 
-data class Treatment(
-    val medications: List<Medication>,
-    val lifestyleRecommendations: String
-)
-
-data class Medication(
-    val name: String,
-    val dosage: String,
-    val frequency: String,
-    val duration: String
+data class PrescriptionTimes(
+    val morning: Boolean,
+    val afternoon: Boolean,
+    val night: Boolean
 )

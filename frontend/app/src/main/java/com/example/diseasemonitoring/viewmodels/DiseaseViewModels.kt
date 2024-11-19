@@ -22,13 +22,15 @@ class DiseaseViewModels : ViewModel() {
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> get() = _isLoading
 
+    private val staticUserId = "64fef678e1b2ec4f112d4f89"
     init {
-        fetchAllDiseases()
+        fetchAllDiseases(staticUserId)
     }
 
     fun addDisease(disease: Disease) {
         _isLoading.value = true // Set loading state before API call
-        RetrofitInstance.api.addDisease(disease).enqueue(object : Callback<Disease> {
+        val diseaseWithUserId = disease.copy(userId = staticUserId)
+        RetrofitInstance.api.addDisease(diseaseWithUserId).enqueue(object : Callback<Disease> {
             override fun onResponse(call: Call<Disease>, response: Response<Disease>) {
                 _isLoading.value = false // Reset loading state
                 if (response.isSuccessful) {
@@ -60,9 +62,9 @@ class DiseaseViewModels : ViewModel() {
         Log.e("DiseaseViewModels", "API error (Code: $statusCode): $errorBody")
     }
 
-    fun fetchDiseaseByName(name: String) {
+    fun fetchDiseaseByName(userId:String ,name: String) {
         _isLoading.value = true
-        RetrofitInstance.api.getDiseaseByName(name).enqueue(object : Callback<Disease> {
+        RetrofitInstance.api.getDiseaseUserIdAndByName(userId,name).enqueue(object : Callback<Disease> {
             override fun onResponse(call: Call<Disease>, response: Response<Disease>) {
                 _isLoading.value = false // Reset loading state
                 if (response.isSuccessful) {
@@ -81,9 +83,9 @@ class DiseaseViewModels : ViewModel() {
         })
     }
 
-    fun fetchAllDiseases() {
+    fun fetchAllDiseases(userId:String) {
         _isLoading.value = true
-        RetrofitInstance.api.getAllDiseases().enqueue(object : Callback<List<Disease>> {
+        RetrofitInstance.api.getAllDiseases(userId ).enqueue(object : Callback<List<Disease>> {
             override fun onResponse(call: Call<List<Disease>>, response: Response<List<Disease>>) {
                 _isLoading.value = false // Reset loading state
                 if (response.isSuccessful) {
@@ -103,6 +105,51 @@ class DiseaseViewModels : ViewModel() {
     }
 
 
+    fun updateDisease(diseaseName: String,updatedDisease:Disease) {
+        _isLoading.value = true
+        val diseaseWithUserId = updatedDisease.copy(userId = staticUserId)
+        RetrofitInstance.api.updateDisease(staticUserId , diseaseName, diseaseWithUserId).enqueue(object : Callback<Disease> {
+            override fun onResponse(call: Call<Disease>, response: Response<Disease>) {
+                _isLoading.value = false
+                if (response.isSuccessful) {
+                    response.body()?.let { updated ->
+                        _disease.value = updated
+                        _diseaseList.value = _diseaseList.value?.map {
+                            if (it.name == diseaseName) updated else it
+                        }
+                        Log.d("DiseaseViewModels", "Disease updated successfully: $updated")
+                    }
+                } else {
+                    handleError(response)
+                }
+            }
 
+            override fun onFailure(call: Call<Disease>, t: Throwable) {
+                _isLoading.value = false
+                _errorMessage.value = "Error updating disease: ${t.message}"
+                Log.e("DiseaseViewModels", "Error updating disease: ${t.message}")
+            }
+        })
+    }
+    fun deleteDisease(diseaseName: String) {
+        _isLoading.value = true
+        RetrofitInstance.api.deleteDisease(staticUserId, diseaseName).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                _isLoading.value = false
+                if (response.isSuccessful) {
+                    // Remove the deleted disease from the list
+                    _diseaseList.value = _diseaseList.value?.filter { it.name != diseaseName }
+                    Log.d("DiseaseViewModels", "Disease deleted successfully")
+                } else {
+                    handleError(response)
+                }
+            }
 
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                _isLoading.value = false
+                _errorMessage.value = "Error deleting disease: ${t.message}"
+                Log.e("DiseaseViewModels", "Error deleting disease: ${t.message}")
+            }
+        })
+    }
 }

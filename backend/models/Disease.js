@@ -1,69 +1,55 @@
 const mongoose = require('mongoose');
 
-
-
 const DiseaseSchema = new mongoose.Schema({
-
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
     name: {
         type: String,
         required: true,
     },
-    symptoms: {
+
+    medicine: {
         type: String,
         required: true,
+
     },
-    severity: {
-        type: String,
-        default: 'Moderate'
+    prescriptionTimes: {
+        morning: {
+            type: Boolean,
+            default: false
+        },
+        afternoon: {
+            type: Boolean,
+            default: false
+        },
+        night: {
+            type: Boolean,
+            default: false
+        },
     },
-    notes: {
+    prescription: {
         type: String,
         default: '',
     },
-    treatment: {
-        medications: [{
-
-             name:String,
-             dosage:String,
-             frequency:String, //'Twice daily'
-             duration: String,  // '2 weeks'
-
-            },
-
-
-        ],
-        lifestyleRecommendations:{
-            type:String, // "Avoid sugar and processed foods."
-        }
-
-
+    notificationTime: {
+        type: String,
+        default: '',
     },
-    status:{
-        type:String,
-        enum: ['Ongoing', 'Recovered','Under Observation'],
-        default:'Ongoing',
+    diagnosedAt: {
+        type: Date,
+        default: Date.now,
     },
-
-    diagnosedAt:{
-        type:Date,
-        default:Date.now,
-    },
-    lastUpdated:{
-        type:Date,
-        default:Date.now,
+    lastUpdated: {
+        type: Date,
+        default: Date.now,
     }
-
-
-
-
-
-
 })
-
 DiseaseSchema.pre('save', function (next) {
-    this.lastUpdated = Date.now(); // Automatically update lastUpdated before saving
+    this.lastUpdated = Date.now();
     next();
-  });
+});
 
-  
-  module.exports = mongoose.model('Disease', DiseaseSchema);
+module.exports = mongoose.model('Disease', DiseaseSchema);
