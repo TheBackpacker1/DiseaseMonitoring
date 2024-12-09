@@ -16,7 +16,7 @@ import com.example.diseasemonitoring.screens.Screen
 fun BottomNavigationBar(navController: NavHostController) {
     NavigationBar {
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+            icon = { Icon(Icons.Default.Home, contentDescription = "Home" ) },
             label = { Text("Home") },
             selected = false, // Update selection based on navigation state
             onClick = { navController.navigate(Screen.Home.route) }
